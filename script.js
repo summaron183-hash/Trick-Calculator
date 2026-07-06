@@ -11,7 +11,7 @@ function handlePress(value) {
         clearCounter = 0;
     }
 
-    if (value === '⌫') {
+    if (value === 'Del') {
         // Remove the last character from the current input string
         currentInput = currentInput.slice(0, -1);
         
