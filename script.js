@@ -54,33 +54,17 @@ function handlePress(value) {
         return;
     }
 
-    // 4. ACTION: Math Operators (This is where the magic happens)
+    // 4. ACTION: Math Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
-            
-            // TRICK TRIGGER: Check if they just typed [4 digits] x [4 digits] and pressed 'x' again
-            if (
-                value === '×' && 
-                inputHistory.length === 3 && 
-                inputHistory[0].length === 4 && 
-                inputHistory[1] === '×' && 
-                inputHistory[2].length === 4
-            ) {
-                // Instantly force the screen to show the preset number
-                updateDisplay(secretAnswer);
-                currentInput = secretAnswer;
-                inputHistory = []; // Reset history so further typing treats this as the new starting number
-                return;
-            }
-
             inputHistory.push(value);
             currentInput = "";
         }
         return;
     }
 
-    // 5. ACTION: Equals & Standard Calculation
+    // 5. ACTION: Equals & Trigger Check
     if (value === '=') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
@@ -111,24 +95,36 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
-    try {
-        let mathExpression = inputHistory.join(' ')
-            .replace(/×/g, '*')
-            .replace(/÷/g, '/');
+    // Check if pattern is [4 digits] x [4 digits] x [4 digits]
+    if (
+        inputHistory.length === 5 &&
+        inputHistory[0].length === 4 && inputHistory[1] === '×' &&
+        inputHistory[2].length === 4 && inputHistory[3] === '×' &&
+        inputHistory[4].length === 4
+    ) {
+        updateDisplay(secretAnswer);
+        currentInput = secretAnswer;
+        inputHistory = [];
+    } else {
+        try {
+            let mathExpression = inputHistory.join(' ')
+                .replace(/×/g, '*')
+                .replace(/÷/g, '/');
+                
+            let result = eval(mathExpression);
             
-        let result = eval(mathExpression);
-        
-        if (result % 1 !== 0) {
-            result = parseFloat(result.toFixed(8));
+            if (result % 1 !== 0) {
+                result = parseFloat(result.toFixed(8));
+            }
+            
+            updateDisplay(result);
+            currentInput = result.toString();
+            inputHistory = [];
+        } catch (error) {
+            updateDisplay("Error");
+            currentInput = "";
+            inputHistory = [];
         }
-        
-        updateDisplay(result);
-        currentInput = result.toString();
-        inputHistory = [];
-    } catch (error) {
-        updateDisplay("Error");
-        currentInput = "";
-        inputHistory = [];
     }
 }
 
