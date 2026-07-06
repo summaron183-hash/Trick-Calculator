@@ -2,10 +2,10 @@ let currentInput = "";
 let inputHistory = [];     
 let clearCounter = 0;      
 
-// Pull saved secret answer from device memory, otherwise default to 7777
+// Load saved secret answer from device memory, defaults to 7777
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
 
-// Helper function to format strings with thousands-separator commas cleanly
+// Helper function to cleanly format numbers with commas
 function formatNumberWithCommas(str) {
     if (!str) return "";
     let parts = str.toString().split(".");
@@ -13,7 +13,7 @@ function formatNumberWithCommas(str) {
     return parts.join(".");
 }
 
-// Formats the entire formula history line and injects colored spans for operators
+// Builds the formula text line with cyan colored operators
 function buildFormulaHTML() {
     let html = "";
     inputHistory.forEach(item => {
@@ -34,7 +34,7 @@ function handlePress(value) {
         clearCounter = 0;
     }
 
-    // 1. ACTION: Delete / Backspace
+    // 1. ACTION: Backspace
     if (value === 'Del') {
         currentInput = currentInput.slice(0, -1);
         updateDisplay();
@@ -42,7 +42,7 @@ function handlePress(value) {
         return;
     }
 
-    // 2. ACTION: Clear Screen & Admin Code
+    // 2. ACTION: Clear & Settings Trigger
     if (value === 'C') {
         clearCounter++;
         currentInput = "";
@@ -57,7 +57,7 @@ function handlePress(value) {
         return;
     }
 
-    // 3. ACTION: Smart Brackets
+    // 3. ACTION: Parentheses
     if (value === '()') {
         let openCount = (currentInput.match(/\(/g) || []).length;
         let closeCount = (currentInput.match(/\)/g) || []).length;
@@ -76,37 +76,28 @@ function handlePress(value) {
         return;
     }
 
-    // 4. ACTION: Math Operators
+    // 4. ACTION: Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
-            
-            // TRICK TRIGGER: Check if they typed [4 digits] x [4 digits] and pressed 'x' again
-            if (
-                value === '×' && 
-                inputHistory.length === 3 && 
-                inputHistory[0].length === 4 && 
-                inputHistory[1] === '×' && 
-                inputHistory[2].length === 4
-            ) {
-                currentInput = secretAnswer;
-                inputHistory = []; 
-                updateDisplay();
-                document.getElementById("result-line").innerText = "";
-                return;
-            }
-
-            inputHistory.push(value);
             currentInput = "";
+        } else if (inputHistory.length > 0 && isNaN(inputHistory[inputHistory.length - 1])) {
+            // Replace last operator if clicked sequentially
+            inputHistory[inputHistory.length - 1] = value;
+            updateDisplay();
+            return;
         }
+        
+        inputHistory.push(value);
         updateDisplay();
         return;
     }
 
-    // 5. ACTION: Equals
+    // 5. ACTION: Equals (Calculation Execution)
     if (value === '=') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
+            currentInput = "";
         }
         executeCalculation();
         return;
@@ -114,12 +105,30 @@ function handlePress(value) {
 
     if (value === '.' && currentInput.includes('.')) return;
 
-    // 6. ACTION: Numbers
+    // 6. ACTION: Numbers Entry
     if (currentInput === "0" && value !== '.') {
         currentInput = value;
     } else {
         currentInput += value;
     }
+
+    // TRICK TRIGGER CHECK: Check if they just typed the 3rd 4-digit number sequence
+    if (
+        inputHistory.length === 4 &&
+        inputHistory[0].length === 4 &&
+        inputHistory[1] === '×' &&
+        inputHistory[2].length === 4 &&
+        inputHistory[3] === '×' &&
+        currentInput.length === 4
+    ) {
+        // Intercept right on the 4th digit of the 3rd number entry
+        currentInput = secretAnswer;
+        inputHistory = []; 
+        updateDisplay();
+        document.getElementById("result-line").innerText = "";
+        return;
+    }
+
     updateDisplay();
     calculateLiveSubset(); 
 }
@@ -133,6 +142,11 @@ function calculateLiveSubset() {
         let tempHistory = [...inputHistory];
         if (currentInput !== "") tempHistory.push(currentInput);
         
+        // Ensure expression doesn't end with a trailing raw operator for evaluation
+        if (isNaN(tempHistory[tempHistory.length - 1]) && tempHistory[tempHistory.length - 1] !== ')') {
+            tempHistory.pop();
+        }
+
         let mathExpression = tempHistory.join(' ')
             .replace(/×/g, '*')
             .replace(/÷/g, '/');
@@ -142,12 +156,12 @@ function calculateLiveSubset() {
         
         document.getElementById("result-line").innerText = formatNumberWithCommas(result);
     } catch (e) {
-        // Silent catch for incomplete formulas
+        // Keep display clean during incomplete typing stages
     }
 }
 
 function openSecretSettings() {
-    let newSecret = prompt("System Configuration. Enter new trigger target outcome:", secretAnswer);
+    let newSecret = prompt("System Configuration. Enter secret outcome:", secretAnswer);
     if (newSecret !== null && newSecret.trim() !== "") {
         secretAnswer = newSecret.trim();
         localStorage.setItem("hiddenSecretNumber", secretAnswer);
@@ -156,6 +170,7 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
+    if (inputHistory.length === 0) return;
     try {
         let mathExpression = inputHistory.join(' ')
             .replace(/×/g, '*')
