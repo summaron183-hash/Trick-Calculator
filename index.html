@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="calculator">
+        <!-- Display Screen -->
+        <div class="display" id="screen">0</div>
+        
+        <!-- Button Grid -->
+        <div class="buttons">
+            <button class="btn action" onclick="handlePress('C')">C</button>
+            <button class="btn action" onclick="handlePress('()')">( )</button>
+            <button class="btn action" onclick="handlePress('%')">%</button>
+            <button class="btn operator" onclick="handlePress('÷')">÷</button>
+
+            <button class="btn" onclick="handlePress('7')">7</button>
+            <button class="btn" onclick="handlePress('8')">8</button>
+            <button class="btn" onclick="handlePress('9')">9</button>
+            <button class="btn operator" onclick="handlePress('×')">×</button>
+
+            <button class="btn" onclick="handlePress('4')">4</button>
+            <button class="btn" onclick="handlePress('5')">5</button>
+            <button class="btn" onclick="handlePress('6')">6</button>
+            <button class="btn operator" onclick="handlePress('-')">-</button>
+
+            <button class="btn" onclick="handlePress('1')">1</button>
+            <button class="btn" onclick="handlePress('2')">2</button>
+            <button class="btn" onclick="handlePress('3')">3</button>
+            <button class="btn operator" onclick="handlePress('+')">+</button>
+
+            <button class="btn" onclick="handlePress('+/-')">+/-</button>
+            <button class="btn" onclick="handlePress('0')">0</button>
+            <button class="btn" onclick="handlePress('.')">.</button>
+            <button class="btn equals" onclick="handlePress('=')">=</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
