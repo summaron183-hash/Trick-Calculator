@@ -5,8 +5,31 @@ let clearCounter = 0;
 // Pull saved secret answer from device memory, otherwise default to 7777
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
 
+// Helper function to format strings with thousands-separator commas cleanly
+function formatNumberWithCommas(str) {
+    if (!str) return "";
+    let parts = str.toString().split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+}
+
+// Formats the entire formula history line and injects colored spans for operators
+function buildFormulaHTML() {
+    let html = "";
+    inputHistory.forEach(item => {
+        if (item === '×' || item === '+' || item === '-' || item === '÷') {
+            html += `<span class="operator-cyan">${item}</span>`;
+        } else {
+            html += formatNumberWithCommas(item);
+        }
+    });
+    if (currentInput !== "") {
+        html += formatNumberWithCommas(currentInput);
+    }
+    return html || "0";
+}
+
 function handlePress(value) {
-    // Reset C counter if anything else is pressed
     if (value !== 'C') {
         clearCounter = 0;
     }
@@ -14,11 +37,8 @@ function handlePress(value) {
     // 1. ACTION: Delete / Backspace
     if (value === 'Del') {
         currentInput = currentInput.slice(0, -1);
-        if (currentInput === "") {
-            updateDisplay("0");
-        } else {
-            updateDisplay(currentInput);
-        }
+        updateDisplay();
+        calculateLiveSubset();
         return;
     }
 
@@ -27,7 +47,8 @@ function handlePress(value) {
         clearCounter++;
         currentInput = "";
         inputHistory = [];
-        updateDisplay("0");
+        updateDisplay();
+        document.getElementById("result-line").innerText = "";
 
         if (clearCounter === 6) {
             clearCounter = 0; 
@@ -50,7 +71,8 @@ function handlePress(value) {
                 currentInput += '(';
             }
         }
-        updateDisplay(currentInput);
+        updateDisplay();
+        calculateLiveSubset();
         return;
     }
 
@@ -58,13 +80,30 @@ function handlePress(value) {
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
+            
+            // TRICK TRIGGER: Check if they typed [4 digits] x [4 digits] and pressed 'x' again
+            if (
+                value === '×' && 
+                inputHistory.length === 3 && 
+                inputHistory[0].length === 4 && 
+                inputHistory[1] === '×' && 
+                inputHistory[2].length === 4
+            ) {
+                currentInput = secretAnswer;
+                inputHistory = []; 
+                updateDisplay();
+                document.getElementById("result-line").innerText = "";
+                return;
+            }
+
             inputHistory.push(value);
             currentInput = "";
         }
+        updateDisplay();
         return;
     }
 
-    // 5. ACTION: Equals & Trigger Check
+    // 5. ACTION: Equals
     if (value === '=') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
@@ -73,16 +112,38 @@ function handlePress(value) {
         return;
     }
 
-    // Prevent multi-decimal bugs
     if (value === '.' && currentInput.includes('.')) return;
 
-    // 6. ACTION: Normal Number Inputs
+    // 6. ACTION: Numbers
     if (currentInput === "0" && value !== '.') {
         currentInput = value;
     } else {
         currentInput += value;
     }
-    updateDisplay(currentInput);
+    updateDisplay();
+    calculateLiveSubset(); 
+}
+
+function calculateLiveSubset() {
+    if (inputHistory.length < 2) {
+        document.getElementById("result-line").innerText = "";
+        return;
+    }
+    try {
+        let tempHistory = [...inputHistory];
+        if (currentInput !== "") tempHistory.push(currentInput);
+        
+        let mathExpression = tempHistory.join(' ')
+            .replace(/×/g, '*')
+            .replace(/÷/g, '/');
+            
+        let result = eval(mathExpression);
+        if (result % 1 !== 0) result = parseFloat(result.toFixed(6));
+        
+        document.getElementById("result-line").innerText = formatNumberWithCommas(result);
+    } catch (e) {
+        // Silent catch for incomplete formulas
+    }
 }
 
 function openSecretSettings() {
@@ -95,39 +156,29 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
-    // Check if pattern is [4 digits] x [4 digits] x [4 digits]
-    if (
-        inputHistory.length === 5 &&
-        inputHistory[0].length === 4 && inputHistory[1] === '×' &&
-        inputHistory[2].length === 4 && inputHistory[3] === '×' &&
-        inputHistory[4].length === 4
-    ) {
-        updateDisplay(secretAnswer);
-        currentInput = secretAnswer;
-        inputHistory = [];
-    } else {
-        try {
-            let mathExpression = inputHistory.join(' ')
-                .replace(/×/g, '*')
-                .replace(/÷/g, '/');
-                
-            let result = eval(mathExpression);
+    try {
+        let mathExpression = inputHistory.join(' ')
+            .replace(/×/g, '*')
+            .replace(/÷/g, '/');
             
-            if (result % 1 !== 0) {
-                result = parseFloat(result.toFixed(8));
-            }
-            
-            updateDisplay(result);
-            currentInput = result.toString();
-            inputHistory = [];
-        } catch (error) {
-            updateDisplay("Error");
-            currentInput = "";
-            inputHistory = [];
+        let result = eval(mathExpression);
+        
+        if (result % 1 !== 0) {
+            result = parseFloat(result.toFixed(8));
         }
+        
+        document.getElementById("formula-line").innerHTML = formatNumberWithCommas(result);
+        document.getElementById("result-line").innerText = "";
+        currentInput = result.toString();
+        inputHistory = [];
+    } catch (error) {
+        document.getElementById("formula-line").innerText = "Error";
+        document.getElementById("result-line").innerText = "";
+        currentInput = "";
+        inputHistory = [];
     }
 }
 
-function updateDisplay(value) {
-    document.getElementById("screen").innerText = value;
+function updateDisplay() {
+    document.getElementById("formula-line").innerHTML = buildFormulaHTML();
 }
