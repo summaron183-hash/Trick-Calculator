@@ -1,24 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Calculator</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <div class="calculator">
-        <!-- Dual-line Real-time Display -->
-        <div class="screen-container">
-            <div id="formula-line" class="formula-display">0</div>
-            <div id="result-line" class="calculation-display"></div>
-        </div>
-
-        <!-- Button Grid Layout -->
+        <!-- Button Grid -->
         <div class="buttons">
             <button class="btn action" onclick="handlePress('C')">C</button>
+            <button class="btn action" onclick="handlePress('()')">( )</button>
             <button class="btn action" onclick="handlePress('Del')">Del</button>
-            <button class="btn action" onclick="handlePress('%')">%</button>
             <button class="btn operator" onclick="handlePress('÷')">÷</button>
 
             <button class="btn" onclick="handlePress('7')">7</button>
@@ -36,12 +20,8 @@
             <button class="btn" onclick="handlePress('3')">3</button>
             <button class="btn operator" onclick="handlePress('+')">+</button>
 
-            <button class="btn" onclick="handlePress('()')">( )</button>
+            <button class="btn" onclick="handlePress('+/-')">+/-</button>
             <button class="btn" onclick="handlePress('0')">0</button>
             <button class="btn" onclick="handlePress('.')">.</button>
             <button class="btn equals" onclick="handlePress('=')">=</button>
         </div>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
