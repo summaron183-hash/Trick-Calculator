@@ -6,31 +6,29 @@ let clearCounter = 0;
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
 
 function handlePress(value) {
-    // If anything other than 'C' is pressed, reset the 'C' streak counter
+    // Reset C counter if anything else is pressed
     if (value !== 'C') {
         clearCounter = 0;
     }
 
+    // 1. ACTION: Delete / Backspace
     if (value === 'Del') {
-        // Remove the last character from the current input string
         currentInput = currentInput.slice(0, -1);
-        
-        // If the screen becomes empty, show 0
-    if (currentInput === "") {
+        if (currentInput === "") {
             updateDisplay("0");
         } else {
             updateDisplay(currentInput);
         }
         return;
     }
-    
+
+    // 2. ACTION: Clear Screen & Admin Code
     if (value === 'C') {
         clearCounter++;
         currentInput = "";
         inputHistory = [];
         updateDisplay("0");
 
-        // SECRET INTERCEPT 1: Pressing 'C' 6 times opens the menu
         if (clearCounter === 6) {
             clearCounter = 0; 
             openSecretSettings();
@@ -38,7 +36,25 @@ function handlePress(value) {
         return;
     }
 
-    // Handle math operators
+    // 3. ACTION: Smart Brackets
+    if (value === '()') {
+        let openCount = (currentInput.match(/\(/g) || []).length;
+        let closeCount = (currentInput.match(/\)/g) || []).length;
+        
+        if (openCount > closeCount && !currentInput.endsWith('(')) {
+            currentInput += ')';
+        } else {
+            if (currentInput === "0" || currentInput === "") {
+                currentInput = '(';
+            } else {
+                currentInput += '(';
+            }
+        }
+        updateDisplay(currentInput);
+        return;
+    }
+
+    // 4. ACTION: Math Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
@@ -48,7 +64,7 @@ function handlePress(value) {
         return;
     }
 
-    // Handle compilation when '=' is clicked
+    // 5. ACTION: Equals & Trigger Check
     if (value === '=') {
         if (currentInput !== "") {
             inputHistory.push(currentInput);
@@ -60,7 +76,7 @@ function handlePress(value) {
     // Prevent multi-decimal bugs
     if (value === '.' && currentInput.includes('.')) return;
 
-    // Normal digit entry
+    // 6. ACTION: Normal Number Inputs
     if (currentInput === "0" && value !== '.') {
         currentInput = value;
     } else {
@@ -73,13 +89,13 @@ function openSecretSettings() {
     let newSecret = prompt("System Configuration. Enter new trigger target outcome:", secretAnswer);
     if (newSecret !== null && newSecret.trim() !== "") {
         secretAnswer = newSecret.trim();
-        localStorage.setItem("hiddenSecretNumber", secretAnswer); // Save it to device storage permanently
+        localStorage.setItem("hiddenSecretNumber", secretAnswer);
         alert("Configuration updated successfully.");
     }
 }
 
 function executeCalculation() {
-    // SECRET INTERCEPT 2: Check if pattern is [4 digits] x [4 digits] x [4 digits]
+    // Check if pattern is [4 digits] x [4 digits] x [4 digits]
     if (
         inputHistory.length === 5 &&
         inputHistory[0].length === 4 && inputHistory[1] === '×' &&
@@ -90,7 +106,6 @@ function executeCalculation() {
         currentInput = secretAnswer;
         inputHistory = [];
     } else {
-        // Run standard calculator math
         try {
             let mathExpression = inputHistory.join(' ')
                 .replace(/×/g, '*')
@@ -98,7 +113,6 @@ function executeCalculation() {
                 
             let result = eval(mathExpression);
             
-            // Format long floating numbers nicely
             if (result % 1 !== 0) {
                 result = parseFloat(result.toFixed(8));
             }
@@ -116,4 +130,4 @@ function executeCalculation() {
 
 function updateDisplay(value) {
     document.getElementById("screen").innerText = value;
-              }
+}
