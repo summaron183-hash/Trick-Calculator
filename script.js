@@ -11,6 +11,19 @@ function handlePress(value) {
         clearCounter = 0;
     }
 
+    if (value === '⌫') {
+        // Remove the last character from the current input string
+        currentInput = currentInput.slice(0, -1);
+        
+        // If the screen becomes empty, show 0
+    if (currentInput === "") {
+            updateDisplay("0");
+        } else {
+            updateDisplay(currentInput);
+        }
+        return;
+    }
+    
     if (value === 'C') {
         clearCounter++;
         currentInput = "";
