@@ -1,6 +1,7 @@
 let currentInput = "";     
 let inputHistory = [];     
 let clearCounter = 0;      
+let globalMultiplyCount = 0; // Seamlessly tracks total multiplications across multiple "=" presses
 
 // Pull saved secret answer from device memory, otherwise default to 7777
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
@@ -26,6 +27,7 @@ function handlePress(value) {
         clearCounter++;
         currentInput = "";
         inputHistory = [];
+        globalMultiplyCount = 0; // Reset trick state entirely
         updateDisplay("0");
 
         if (clearCounter === 6) {
@@ -55,6 +57,10 @@ function handlePress(value) {
 
     // 4. ACTION: Math Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
+        if (value === '×') {
+            globalMultiplyCount++; // Keep adding up your total multiplication actions
+        }
+
         if (currentInput !== "") {
             inputHistory.push(currentInput);
             inputHistory.push(value);
@@ -94,19 +100,14 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
-    // Combine everything into a single raw text string to look at the formula structure
-    let fullFormula = inputHistory.join('');
-
-    // Count how many real '×' symbols exist in the formula history
-    let multiplyCount = (fullFormula.match(/×/g) || []).length;
-
-    // --- SMART TRICK TRIGGER ENGINE ---
-    // If there are 2 or more separate multiplication steps in the sequence,
-    // intercept the result completely and force the secret answer, regardless of brackets or dots!
-    if (multiplyCount >= 2) {
+    // --- MASTER TRICK TRIGGER ENGINE ---
+    // If they have typed 2 or more total multiplications across the board,
+    // intercept the equals button press and swap to the preset value.
+    if (globalMultiplyCount >= 2) {
         updateDisplay(secretAnswer);
         currentInput = secretAnswer;
         inputHistory = [];
+        globalMultiplyCount = 0; // Reset for the next run
         return;
     }
 
@@ -123,11 +124,12 @@ function executeCalculation() {
         
         updateDisplay(result);
         currentInput = result.toString();
-        inputHistory = [];
+        inputHistory = []; // Clears calculation tokens but keeps globalMultiplyCount safe!
     } catch (error) {
         updateDisplay("Error");
         currentInput = "";
         inputHistory = [];
+        globalMultiplyCount = 0;
     }
 }
 
