@@ -1,6 +1,7 @@
 let currentInput = "";     
 let inputHistory = [];     
-let clearCounter = 0;      
+let clearCounter = 0;     
+
 
 // Pull saved secret answer from device memory, otherwise default to 7777
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
