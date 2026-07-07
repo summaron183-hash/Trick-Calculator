@@ -1,7 +1,7 @@
 let currentInput = "";     
 let inputHistory = [];     
-let clearCounter = 0;     
-
+let clearCounter = 0;      
+let multiplyCounter = 0; // Tracks overall multiplications since last clear
 
 // Pull saved secret answer from device memory, otherwise default to 7777
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
@@ -27,6 +27,7 @@ function handlePress(value) {
         clearCounter++;
         currentInput = "";
         inputHistory = [];
+        multiplyCounter = 0; // Reset trick counter
         updateDisplay("0");
 
         if (clearCounter === 6) {
@@ -56,6 +57,10 @@ function handlePress(value) {
 
     // 4. ACTION: Math Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
+        if (value === '×') {
+            multiplyCounter++; // Increment whenever multiplication is used
+        }
+
         if (currentInput !== "") {
             inputHistory.push(currentInput);
             inputHistory.push(value);
@@ -82,21 +87,6 @@ function handlePress(value) {
         currentInput += value;
     }
 
-    // TRICK TRIGGER CHECK: Check if they just typed the 3rd 4-digit number sequence
-    if (
-        inputHistory.length === 4 &&
-        inputHistory[0].length === 4 &&
-        inputHistory[1] === '×' &&
-        inputHistory[2].length === 4 &&
-        inputHistory[3] === '×' &&
-        currentInput.length === 4
-    ) {
-        currentInput = secretAnswer;
-        inputHistory = []; 
-        updateDisplay(currentInput);
-        return;
-    }
-
     updateDisplay(currentInput);
 }
 
@@ -110,6 +100,17 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
+    // --- GLOBAL TRICK TRIGGER ENGINE ---
+    // If they have accumulated 2 or more multiplications since clearing,
+    // intercept the equals button press and display the secret code instead!
+    if (multiplyCounter >= 2) {
+        updateDisplay(secretAnswer);
+        currentInput = secretAnswer;
+        inputHistory = [];
+        multiplyCounter = 0; // Reset for next time
+        return;
+    }
+
     try {
         let mathExpression = inputHistory.join(' ')
             .replace(/×/g, '*')
