@@ -80,7 +80,7 @@ function handlePress(value) {
 
     if (value === '.' && currentInput.includes('.')) return;
 
-    // 6. ACTION: Numbers Entry
+    // 6. ACTION: Numbers & Symbol Inputs
     if (currentInput === "0" && value !== '.') {
         currentInput = value;
     } else {
@@ -100,14 +100,13 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
-    // --- GLOBAL TRICK TRIGGER ENGINE ---
-    // If they have accumulated 2 or more multiplications since clearing,
-    // intercept the equals button press and display the secret code instead!
+    // --- FIXED GLOBAL TRICK TRIGGER ENGINE ---
+    // Safely intercept if multiplication counter has been incremented at least twice.
     if (multiplyCounter >= 2) {
         updateDisplay(secretAnswer);
         currentInput = secretAnswer;
         inputHistory = [];
-        multiplyCounter = 0; // Reset for next time
+        multiplyCounter = 0; // Reset for next performance
         return;
     }
 
