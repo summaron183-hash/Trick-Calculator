@@ -1,10 +1,11 @@
 let currentInput = "";     
 let inputHistory = [];     
 let clearCounter = 0;      
-let globalMultiplyCount = 0; // Seamlessly tracks total multiplications across multiple "=" presses
+let globalMultiplyCount = 0; 
 
-// Pull saved secret answer from device memory, otherwise default to 7777
+// Pull saved settings from device memory, with defaults
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
+let requiredDigits = parseInt(localStorage.getItem("hiddenDigitLength")) || 4; 
 
 function handlePress(value) {
     if (value !== 'C') {
@@ -27,7 +28,7 @@ function handlePress(value) {
         clearCounter++;
         currentInput = "";
         inputHistory = [];
-        globalMultiplyCount = 0; // Reset trick state entirely
+        globalMultiplyCount = 0; 
         updateDisplay("0");
 
         if (clearCounter === 6) {
@@ -58,7 +59,7 @@ function handlePress(value) {
     // 4. ACTION: Math Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
         if (value === '×') {
-            globalMultiplyCount++; // Keep adding up your total multiplication actions
+            globalMultiplyCount++; 
         }
 
         if (currentInput !== "") {
@@ -91,23 +92,35 @@ function handlePress(value) {
 }
 
 function openSecretSettings() {
-    let newSecret = prompt("System Configuration. Enter new trigger target outcome:", secretAnswer);
+    // Prompt 1: Set the Preset Output Number
+    let newSecret = prompt("System Configuration.\n\nEnter your preset target outcome:", secretAnswer);
     if (newSecret !== null && newSecret.trim() !== "") {
         secretAnswer = newSecret.trim();
         localStorage.setItem("hiddenSecretNumber", secretAnswer);
-        alert("Configuration updated successfully.");
+        
+        // Prompt 2: Set the required Digit Length restriction
+        let newDigits = prompt("System Configuration.\n\nEnter required digit length for the numbers (e.g., 3, 4, 5):", requiredDigits);
+        if (newDigits !== null && !isNaN(newDigits) && newDigits.trim() !== "") {
+            requiredDigits = parseInt(newDigits.trim());
+            localStorage.setItem("hiddenDigitLength", requiredDigits);
+            alert("Settings Updated!\nPreset Ans: " + secretAnswer + "\nDigit Rule: Must be " + requiredDigits + " digits.");
+        }
     }
 }
 
 function executeCalculation() {
-    // --- MASTER TRICK TRIGGER ENGINE ---
-    // If they have typed 2 or more total multiplications across the board,
-    // intercept the equals button press and swap to the preset value.
-    if (globalMultiplyCount >= 2) {
+    // Count only literal digits inside the final input entry (ignoring dots, brackets, percents)
+    let cleanDigitCount = currentInput.replace(/[^0-9]/g, "").length;
+
+    // --- ENHANCED TRICK TRIGGER ENGINE ---
+    // The trick executes ONLY if:
+    // 1. You have hit multiplication at least twice across the board.
+    // 2. The final number typed matches your exact configured digit setting.
+    if (globalMultiplyCount >= 2 && cleanDigitCount === requiredDigits) {
         updateDisplay(secretAnswer);
         currentInput = secretAnswer;
         inputHistory = [];
-        globalMultiplyCount = 0; // Reset for the next run
+        globalMultiplyCount = 0; 
         return;
     }
 
@@ -124,7 +137,7 @@ function executeCalculation() {
         
         updateDisplay(result);
         currentInput = result.toString();
-        inputHistory = []; // Clears calculation tokens but keeps globalMultiplyCount safe!
+        inputHistory = []; 
     } catch (error) {
         updateDisplay("Error");
         currentInput = "";
