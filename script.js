@@ -1,7 +1,6 @@
 let currentInput = "";     
 let inputHistory = [];     
 let clearCounter = 0;      
-let multiplyCounter = 0; // Tracks overall multiplications since last clear
 
 // Pull saved secret answer from device memory, otherwise default to 7777
 let secretAnswer = localStorage.getItem("hiddenSecretNumber") || "7777"; 
@@ -27,7 +26,6 @@ function handlePress(value) {
         clearCounter++;
         currentInput = "";
         inputHistory = [];
-        multiplyCounter = 0; // Reset trick counter
         updateDisplay("0");
 
         if (clearCounter === 6) {
@@ -57,10 +55,6 @@ function handlePress(value) {
 
     // 4. ACTION: Math Operators
     if (value === '×' || value === '+' || value === '-' || value === '÷') {
-        if (value === '×') {
-            multiplyCounter++; // Increment whenever multiplication is used
-        }
-
         if (currentInput !== "") {
             inputHistory.push(currentInput);
             inputHistory.push(value);
@@ -80,7 +74,7 @@ function handlePress(value) {
 
     if (value === '.' && currentInput.includes('.')) return;
 
-    // 6. ACTION: Numbers & Symbol Inputs
+    // 6. ACTION: Numbers Entry
     if (currentInput === "0" && value !== '.') {
         currentInput = value;
     } else {
@@ -100,13 +94,19 @@ function openSecretSettings() {
 }
 
 function executeCalculation() {
-    // --- FIXED GLOBAL TRICK TRIGGER ENGINE ---
-    // Safely intercept if multiplication counter has been incremented at least twice.
-    if (multiplyCounter >= 2) {
+    // Combine everything into a single raw text string to look at the formula structure
+    let fullFormula = inputHistory.join('');
+
+    // Count how many real '×' symbols exist in the formula history
+    let multiplyCount = (fullFormula.match(/×/g) || []).length;
+
+    // --- SMART TRICK TRIGGER ENGINE ---
+    // If there are 2 or more separate multiplication steps in the sequence,
+    // intercept the result completely and force the secret answer, regardless of brackets or dots!
+    if (multiplyCount >= 2) {
         updateDisplay(secretAnswer);
         currentInput = secretAnswer;
         inputHistory = [];
-        multiplyCounter = 0; // Reset for next performance
         return;
     }
 
